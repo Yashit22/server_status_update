@@ -27,7 +27,16 @@ export default async function handler(
   if (expectedSecret) {
     const auth = req.headers.authorization;
     if (auth !== `Bearer ${expectedSecret}`) {
-      res.status(401).json({ ok: false, error: "Unauthorized" });
+      res.status(401).json({
+        ok: false,
+        error: "Unauthorized",
+        debug: {
+          receivedAuth: auth,
+          expectedPrefix: `Bearer ${expectedSecret?.slice(0, 5)}...`,
+          secretLength: expectedSecret?.length,
+          receivedLength: auth?.length,
+        },
+      });
       return;
     }
   }
