@@ -66,6 +66,62 @@ export async function sendDownAlert(
   }
 }
 
+/** Send a "server recovered" alert listing targets that came back up. */
+export async function sendRecoveryAlert(
+  recovered: TargetResult[],
+  opts: AlertOptions,
+): Promise<void> {
+  const resend = new Resend(opts.apiKey);
+  const when = new Date().toISOString();
+
+  const rows = recovered
+    .map(
+      (r) =>
+        `  • ${r.url}\n      status: ${r.status ?? "no response"}\n      detail: ${r.detail}`,
+    )
+    .join("\n\n");
+
+  const text = [
+    `✅ Production server health check RECOVERED`,
+    ``,
+    `Time (UTC): ${when}`,
+    `Recovered targets (${recovered.length}):`,
+    ``,
+    rows,
+    ``,
+    `These targets are responding again.`,
+  ].join("\n");
+
+  const htmlRows = recovered
+    .map(
+      (r) =>
+        `<li><strong>${escapeHtml(r.url)}</strong><br/>` +
+        `status: ${r.status ?? "no response"}<br/>` +
+        `detail: ${escapeHtml(r.detail)}</li>`,
+    )
+    .join("");
+
+  const html = [
+    `<h2 style="color:#0a7d28;">✅ Production server health check RECOVERED</h2>`,
+    `<p><strong>Time (UTC):</strong> ${when}</p>`,
+    `<p><strong>Recovered targets (${recovered.length}):</strong></p>`,
+    `<ul>${htmlRows}</ul>`,
+    `<p>These targets are responding again.</p>`,
+  ].join("");
+
+  const { error } = await resend.emails.send({
+    from: opts.from,
+    to: opts.to,
+    subject: `✅ Server RECOVERED: ${recovered.length} target(s) back up`,
+    text,
+    html,
+  });
+
+  if (error) {
+    throw new Error(`Resend failed to send recovery alert: ${JSON.stringify(error)}`);
+  }
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")

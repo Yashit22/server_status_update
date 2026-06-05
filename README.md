@@ -13,7 +13,11 @@ them goes down.
   target it sends an HTTPS request. If a target fails, it retries **5 times at
   1-second intervals** before declaring it down (this absorbs transient blips).
 - If any target is still down after retries, it emails the configured
-  recipients via Resend.
+  recipients via Resend — but **only on the down edge**. An alert is sent once
+  when a target transitions up→down; while it stays down no further emails are
+  sent. When it recovers (down→up) a single **RECOVERED** email is sent. If it
+  fails again afterward, a new down alert is sent. This up/down state is
+  persisted in Upstash Redis (Vercel KV) across cron runs.
 
 ```
 cron-job.org (every 1 min)  ──HTTPS+Bearer──▶  Vercel /api/health-check  ──▶  pings tunnels (5 retries @1s)  ──▶  Resend email on failure
@@ -38,14 +42,19 @@ cron-job.org (every 1 min)  ──HTTPS+Bearer──▶  Vercel /api/health-chec
    - `ALERT_FROM` — a sender verified in Resend (e.g. `alerts@yourdomain.com`).
    - `ALERT_TO` — optional; defaults to the three project recipients.
    - `HEALTH_CHECK_SECRET` — a long random string (e.g. `openssl rand -hex 32`)
-     that authenticates the scheduler. Use the same value in step 4.
-3. Deploy:
+     that authenticates the scheduler. Use the same value in step 5.
+3. **Add the Upstash (KV) integration** for edge-triggered alerts. In
+   **Vercel → Project → Storage → Create Database → Upstash Redis** (free tier),
+   connect it to the project. Vercel auto-injects `KV_REST_API_URL` and
+   `KV_REST_API_TOKEN`. Without it the service still runs but alerts on every
+   down target each minute instead of just once.
+4. Deploy:
    ```bash
    npm run deploy   # vercel --prod
    ```
    Note your deployed URL, e.g. `https://your-project.vercel.app`.
 
-4. **Set up the cron-job.org scheduler.** Create a free account at
+5. **Set up the cron-job.org scheduler.** Create a free account at
    [cron-job.org](https://cron-job.org), then **Create cronjob** with:
    - **Title:** `Server health check`
    - **URL:** `https://your-project.vercel.app/api/health-check`
@@ -81,6 +90,8 @@ non-2xx (e.g. `https://httpstat.us/500`).
 | `HEALTH_RETRY_DELAY_MS` | no | `1000` | Delay between retries (ms) |
 | `HEALTH_TIMEOUT_MS` | no | `5000` | Per-request timeout (ms) |
 | `HEALTH_CHECK_SECRET` | recommended | — | Shared bearer token; the cron-job.org `Authorization` header must match it |
+| `KV_REST_API_URL` | for edge alerts | — | Upstash Redis REST URL (auto-injected by the Vercel KV integration) |
+| `KV_REST_API_TOKEN` | for edge alerts | — | Upstash Redis REST token (auto-injected) |
 
 ### Adjusting the interval
 

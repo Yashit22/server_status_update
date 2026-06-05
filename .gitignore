@@ -2,8 +2,10 @@ node_modules/
 .vercel/
 .env
 .env*.local
+.env*.example
 *.log
 dist/
 
 .vercel
 .env*
+

@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@upstash/redis": "^1.38.0",
     "resend": "^4.0.0"
   },
   "devDependencies": {
