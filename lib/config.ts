@@ -10,9 +10,9 @@
  *
  * Optional env vars (have sensible defaults):
  *   - ALERT_TO             : comma-separated recipient list. Defaults to the three hard-coded IDs.
- *   - HEALTH_RETRIES       : number of retry attempts after first failure (default 5).
+ *   - HEALTH_RETRIES       : number of retry attempts after first failure (default 4).
  *   - HEALTH_RETRY_DELAY_MS: delay between retries in ms (default 1000).
- *   - HEALTH_TIMEOUT_MS    : per-request timeout in ms (default 8000).
+ *   - HEALTH_TIMEOUT_MS    : per-request timeout in ms (default 5000).
  */
 
 const DEFAULT_RECIPIENTS = [
@@ -64,8 +64,10 @@ export function loadConfig(): AppConfig {
     resendApiKey,
     alertFrom,
     alertTo: alertTo.length > 0 ? alertTo : DEFAULT_RECIPIENTS,
-    retries: parseNumber(process.env.HEALTH_RETRIES, 5),
+    // Hobby-safe defaults: worst-case single-target runtime is
+    // (4+1)*5000 + 4*1000 = 29s, comfortably under the 60s maxDuration cap.
+    retries: parseNumber(process.env.HEALTH_RETRIES, 4),
     retryDelayMs: parseNumber(process.env.HEALTH_RETRY_DELAY_MS, 1000),
-    timeoutMs: parseNumber(process.env.HEALTH_TIMEOUT_MS, 8000),
+    timeoutMs: parseNumber(process.env.HEALTH_TIMEOUT_MS, 5000),
   };
 }

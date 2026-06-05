@@ -77,9 +77,9 @@ non-2xx (e.g. `https://httpstat.us/500`).
 | `RESEND_API_KEY` | yes | — | Resend API key |
 | `ALERT_FROM` | yes | — | Verified Resend sender |
 | `ALERT_TO` | no | 3 project IDs | Comma-separated recipients |
-| `HEALTH_RETRIES` | no | `5` | Retries after first failure |
+| `HEALTH_RETRIES` | no | `4` | Retries after first failure |
 | `HEALTH_RETRY_DELAY_MS` | no | `1000` | Delay between retries (ms) |
-| `HEALTH_TIMEOUT_MS` | no | `8000` | Per-request timeout (ms) |
+| `HEALTH_TIMEOUT_MS` | no | `5000` | Per-request timeout (ms) |
 | `HEALTH_CHECK_SECRET` | recommended | — | Shared bearer token; the cron-job.org `Authorization` header must match it |
 
 ### Adjusting the interval
