@@ -2,7 +2,8 @@
  * Health-checking logic for HTTPS tunnel targets.
  *
  * A target is considered healthy when an HTTP request to it resolves with a
- * 2xx or 3xx status before the timeout. To avoid alerting on a transient blip,
+ * 2xx, 3xx, or 401 status before the timeout (a 401 from an auth-protected
+ * tunnel still proves the server is alive). To avoid alerting on a transient blip,
  * a failing target is retried `retries` times at `retryDelayMs` intervals
  * before it is declared down.
  */
@@ -34,7 +35,10 @@ async function probe(
       signal: controller.signal,
       headers: { "User-Agent": "vercel-health-check/1.0" },
     });
-    const ok = res.status >= 200 && res.status < 400;
+    // 2xx/3xx mean healthy. 401 also counts as up: an auth-protected tunnel
+    // returning 401 proves the server received the request and is alive — only
+    // a dead tunnel would time out or refuse the connection.
+    const ok = (res.status >= 200 && res.status < 400) || res.status === 401;
     return {
       ok,
       status: res.status,
